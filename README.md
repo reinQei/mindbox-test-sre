@@ -1,10 +1,12 @@
-#  Тестовое задание для Mindbox
+#  Тестовое задание для Mindbox позиция SRE/Dev-Ops Стажёр
 ### Навигация:
     
-    /test-formind-box - основная дирректория
-        /pic - дирректория для изображений
+    /mindbox-test-sre - основная дирректория
+        /materials - дирректория для документации(не используется)
         /src - дирректория для основных 
                файлов проекта
+            /test-deploy.yml - YAML манифест для деплоя стенда
+            /deploy-and-check.py - python скрипт для быстрого запуска
         README.md - markdown-документ для наигации
 ---
 
@@ -13,7 +15,5 @@
     - Kubernetis
     - Docker
     - Python
-    - Prometheus
-    - Grafana
     - Git
     
