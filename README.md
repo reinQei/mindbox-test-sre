@@ -7,7 +7,7 @@
                файлов проекта
             /test-deploy.yml - YAML манифест для деплоя стенда
             /deploy-and-check.py - python скрипт для быстрого запуска
-        README.md - markdown-документ для наигации
+        README.md - markdown-документ для навигации
 ---
 
 ### Технологический стек:
