@@ -1,0 +1,92 @@
+###                                 Основной деплой приложения
+---
+apiVersion: apps/v1 ###             Стандартная версия для API кубера
+kind: Deployment
+
+metadata:
+  name: mindbox-test
+  labels: 
+    app: mindbox-test
+
+spec:
+  replicas: 4 ###                   Решил изначально создавать 4 копии по 2-2 на каждую зону
+  selector:   ###                   так как в нагрузочны тестах 4 использовалось,
+    matchLabels: ###                   за тем создавать 5 в 3 зону в случае превышение нагрузки(экстренная ситуации)
+      app: mindbox-test
+  template: ###                     Чтобы создать все поды и резервный 5 использую темплейты для их индентичности
+    metadata:
+      labels: 
+        app: mindbox-test
+      
+    spec:
+      containers:
+      - name: mindbox-web-app
+        image: nginx:latest ###    Решил выбрать сервер на nginx(самое просто и базовое что можно поднять)
+        ports:
+        - containerPort: 80
+        resources:
+          requests: ###            Беру нижние лимиты для того что бы ноды столько использовали(по тз 0.1 на CPU, а на память 128Mb)
+            cpu: 100m
+            memory: 128Mi
+          limits: ###              Установил максимальные лимиты использования для того чтобы на первичные запросы быстрее отвечали ноды
+            cpu: 500m
+            memory: 256Mi ###      В тз хоть и сказано что всегда примерно 128Mb используется, но резервная память не будет лишней в период повышенной нагрузки
+      topologySpreadConstraints:
+      - maxSkew: 1
+      ###                          Распределение на зоны по тз(у нас их 3), далее будут параметры для распредления
+        topologyKey: topology.kubernetes.io/zone 
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app: mindbox-test
+---
+###                                Настройка распределения нод по зонам
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: mindbox-hpa-test
+  labels:
+    app: mindbox-test
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: mindbox-test
+  minReplicas: 4  ###                Формат распределения нод 2-1-1
+  maxReplicas: 5  ###                Формат распределения нод 2-2-1
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization ###        Упор на считываение использования процессора для расширения 80%
+        averageUtilization: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mindbox-test-svc
+spec:
+  selector:
+    app: mindbox-test
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080 
+      nodePort: 30080 
+---
+###                                  Так же решил написать доступ в сам сервис чтобы проверить так сказать глазами в браузере
+apiVersion: v1
+kind: Service
+metadata:
+  name: mindbox-test-svc
+spec:
+  selector:
+    app: mindbox-test
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 30080
